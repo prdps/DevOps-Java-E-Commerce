@@ -4,6 +4,7 @@ pipeline {
 
     tools {
         maven 'maven'
+        jdk 'jdk-17'
     }
 
     options {
@@ -55,7 +56,8 @@ pipeline {
             steps {
 
                 echo 'Building Maven application...'
-
+                sh 'java --version'
+                sh 'whoami'
                 sh 'mvn clean package -DskipTests'
 
             }
@@ -110,14 +112,11 @@ pipeline {
 
                 echo 'Deploying application to Kubernetes...'
                 sh 'whoami && kubectl config current-context && kubectl get nodes'
-                sh 'cat k8s-Deployment.yml'
-                sh 'cat k8s-Service.yml'
-                sh 'kubectl apply -f k8s-Deployment.yml'
                 sh """
-                kubectl set image deployment/maven-e-com-web-app-deployment \
-                maven-e-com-web-app=${DOCKER_IMAGE}:${IMAGE_TAG}
+                sed -i "s|image: .*|image: pradeepsuresh/maven-e-com-web-app:${BUILD_NUMBER}|g" k8s-Deployment.yml
                 """
-                sh 'kubectl apply -f k8s-Service.yml'
+                sh 'cat k8s-Deployment.yml'
+                sh 'kubectl apply -f k8s-Deployment.yml'
 
             }
         }
